@@ -1,7 +1,3 @@
-
-
-
-
 dataDir = '291';%fullfile('data', '291');
 mkdir('train');
 count = 0;
@@ -11,7 +7,7 @@ f_lst = [f_lst; dir(fullfile(dataDir, '*.bmp'))];
 for f_iter = 1:numel(f_lst)
 %     disp(f_iter);
     f_info = f_lst(f_iter);
-    if f_info.name == '.'
+    if f_info.name == '.' % remove the root '.'
         continue;
     end
     f_path = fullfile(dataDir,f_info.name);

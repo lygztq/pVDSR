@@ -3,10 +3,10 @@ from scipy import misc
 from PIL import Image
 import tensorflow as tf
 import glob, os, re
-from PSNR import psnr
+from psnr import psnr
 import scipy.io
 import pickle
-from MODEL import model
+from model import model
 #from MODEL_FACTORIZED import model_factorized
 import time
 DATA_PATH = "./data/test/"
@@ -44,7 +44,7 @@ def get_test_image(test_list, offset, batch_size):
 		gt_list.append(gt_img)
 		scale_list.append(pair[2])
 	return input_list, gt_list, scale_list
-def test_VDSR_with_sess(epoch, ckpt_path, data_path,sess):
+def test_pVDSR_with_sess(epoch, ckpt_path, data_path,sess):
 	folder_list = glob.glob(os.path.join(data_path, 'Set*'))
 	print 'folder_list', folder_list
 	saver.restore(sess, ckpt_path)
@@ -58,25 +58,25 @@ def test_VDSR_with_sess(epoch, ckpt_path, data_path,sess):
 			input_y = input_list[0]
 			gt_y = gt_list[0]
 			start_t = time.time()
-			img_vdsr_y = sess.run([output_tensor], feed_dict={input_tensor: np.resize(input_y, (1, input_y.shape[0], input_y.shape[1], 1))})
-			img_vdsr_y = np.resize(img_vdsr_y, (input_y.shape[0], input_y.shape[1]))
+			img_pvdsr_y = sess.run([output_tensor], feed_dict={input_tensor: np.resize(input_y, (1, input_y.shape[0], input_y.shape[1], 1))})
+			img_pvdsr_y = np.resize(img_pvdsr_y, (input_y.shape[0], input_y.shape[1]))
 			end_t = time.time()
 			print "end_t",end_t,"start_t",start_t
 			print "time consumption",end_t-start_t
 			print "image_size", input_y.shape
 			
 			psnr_bicub = psnr(input_y, gt_y, scale_list[0])
-			psnr_vdsr = psnr(img_vdsr_y, gt_y, scale_list[0])
-			print "PSNR: bicubic %f\tVDSR %f" % (psnr_bicub, psnr_vdsr)
-			psnr_list.append([psnr_bicub, psnr_vdsr, scale_list[0]])
+			psnr_pvdsr = psnr(img_pvdsr_y, gt_y, scale_list[0])
+			print "PSNR: bicubic %f\tpVDSR %f" % (psnr_bicub, psnr_pvdsr)
+			psnr_list.append([psnr_bicub, psnr_pvdsr, scale_list[0]])
 		psnr_dict[os.path.basename(folder_path)] = psnr_list
 	with open('psnr/%s' % os.path.basename(ckpt_path), 'wb') as f:
 		pickle.dump(psnr_dict, f)
-def test_VDSR(epoch, ckpt_path, data_path):
+def test_pVDSR(epoch, ckpt_path, data_path):
 	with tf.Session() as sess:
-		test_VDSR_with_sess(epoch, ckpt_path, data_path, sess)
+		test_pVDSR_with_sess(epoch, ckpt_path, data_path, sess)
 if __name__ == '__main__':
-	model_list = sorted(glob.glob("./checkpoints/VDSR_adam_epoch_*"))
+	model_list = sorted(glob.glob("./checkpoints/pVDSR_adam_epoch_*"))
 	model_list = [fn for fn in model_list if not os.path.basename(fn).endswith("meta")]
 	with tf.Session() as sess:
 		input_tensor  			= tf.placeholder(tf.float32, shape=(1, None, None, 1))
@@ -91,4 +91,4 @@ if __name__ == '__main__':
 			#if epoch<60:
 			#	continue
 			print "Testing model",model_ckpt
-			test_VDSR_with_sess(80, model_ckpt, DATA_PATH,sess)
+			test_pVDSR_with_sess(80, model_ckpt, DATA_PATH,sess)

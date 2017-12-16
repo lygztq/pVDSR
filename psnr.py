@@ -1,8 +1,10 @@
-
 import numpy as np
 import math
 
 def psnr(target, ref, scale):
+	'''
+	Calculate PSNR for a image
+	'''
 	#assume RGB image
 	target_data = np.array(target)
 	target_data = target_data[scale:-scale, scale:-scale]
