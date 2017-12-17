@@ -27,7 +27,7 @@ Finally, you can get the training data from: [data](https://jbox.sjtu.edu.cn/l/h
 
 #### preprocessing data
 
-* Download the training and test data from [click here](https://jbox.sjtu.edu.cn/l/hJjgMC)
+* Download the training and test data from [here](https://jbox.sjtu.edu.cn/l/hJjgMC)
 * Unzip the data.zip, unzip 291.zip and Set14.zip inside.
 * Copy the 291 and Set14 directory to "/data" directory.
 * Run generate_train.m and generate_test.m to generate training and test data.
