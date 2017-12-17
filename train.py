@@ -129,7 +129,8 @@ def main():
 	# 	model
 	shared_model = tf.make_template('shared_model', model)
 	train_output, weights 	= shared_model(train_input)
-	loss = tf.reduce_sum(tf.nn.l2_loss(tf.subtract(train_output, train_gt)))
+	loss = -tf.reduce_sum(train_gt * (tf.log(train_output)-tf.log(train_gt)))	# KL-divergence
+	#loss = tf.reduce_sum(tf.nn.l2_loss(tf.subtract(train_output, train_gt)))	# MSE
 	for w in weights:
 		loss += tf.nn.l2_loss(w)*1e-4
 	tf.summary.scalar("loss", loss)
