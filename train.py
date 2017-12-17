@@ -50,7 +50,7 @@ def get_train_list(data_path):
 	'''
 	mat_list = glob.glob(os.path.join(data_path,"*"))
 	mat_list = [f for f in mat_list if re.search("^\d+.mat$", os.path.basename(f))]
-	print "Number of training data: %d\n" % 4*len(mat_list)
+	print "Number of training data: %d\n" % (4*len(mat_list))
 	train_list = []
 	for mat in mat_list:
 		if os.path.exists(mat):
