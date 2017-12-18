@@ -55,7 +55,7 @@ def get_train_list(data_path):
 	for mat in mat_list:
 		if os.path.exists(mat):
 			for i in range(2,5):
-				back_name = "_%d.mat"
+				back_name = "_%d.mat" % i
 				if os.path.exists(mat[:-4]+back_name): 
 					train_list.append([mat,mat[:-4]+back_name])
 			# if os.path.exists(f[:-4]+"_2.mat"): train_list.append([f, f[:-4]+"_2.mat"])
