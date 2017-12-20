@@ -8,18 +8,18 @@ import scipy.io
 from model import model
 from psnr import psnr
 from test import test_pVDSR
-from hyper import hpyer
+import hyper
 
-# default hyper-parameters
-DATA_PATH = "./data/train/"
-IMG_SIZE = (41, 41)
-BATCH_SIZE = 64
-BASE_LR = 0.0001
-LR_RATE = 0.1
-LR_STEP_SIZE = 120
-MAX_EPOCH = 120
-USE_QUEUE_LOADING = True
-TEST_DATA_PATH = "./data/test/"
+# Get hyper-parameters
+DATA_PATH = hyper.DATA_PATH
+IMG_SIZE = hyper.IMG_SIZE
+BATCH_SIZE = hyper.BATCH_SIZE
+BASE_LR = hyper.BASE_LR
+LR_RATE = hyper.LR_RATE
+LR_STEP_SIZE = hyper.LR_STEP_SIZE
+MAX_EPOCH = hyper.MAX_EPOCH
+USE_QUEUE_LOADING = hyper.USE_QUEUE_LOADING
+TEST_DATA_PATH = hyper.TEST_DATA_PATH
 
 # the check point path
 parser = argparse.ArgumentParser()
@@ -27,22 +27,23 @@ parser.add_argument("--model_path")
 args = parser.parse_args()
 model_path = args.model_path
 
-def get_hyper(using_default=True):
-	'''
-	Get the hyper-parameter
-	'''
-	if using_default:
-		return
-	else:
-		DATA_PATH = hyper['DATA_PATH']
-		IMG_SIZE = hyper['IMG_SIZE']
-		BATCH_SIZE = hyper['BATCH_SIZE']
-		BASE_LR = hyper['BASE_LR']
-		LR_RATE = hyper['LR_RATE']
-		LR_STEP_SIZE = hyper['LR_STEP_SIZE']
-		MAX_EPOCH = hyper['MAX_EPOCH']
-		USE_QUEUE_LOADING = hyper['USE_QUEUE_LOADING']
-		TEST_DATA_PATH = hyper['TEST_DATA_PATH']
+#def get_hyper(using_default=True):
+#	'''
+#	Get the hyper-parameter
+#	'''
+ #       global DATA_PATH, IMG_SIZE, BATCH_SIZE, BASE_LR, LR_RATE, LR_STEP_SIZE, MAX_EPOCH, USE_QUEUE_LOADING, TEST_DATA_PATH
+#	if using_default:
+#		return
+#	else:
+#		DATA_PATH = hyper['DATA_PATH']
+#		IMG_SIZE = hyper['IMG_SIZE']
+#		BATCH_SIZE = hyper['BATCH_SIZE']
+#		BASE_LR = hyper['BASE_LR']
+#		LR_RATE = hyper['LR_RATE']
+#		LR_STEP_SIZE = hyper['LR_STEP_SIZE']
+#		MAX_EPOCH = hyper['MAX_EPOCH']
+#		USE_QUEUE_LOADING = hyper['USE_QUEUE_LOADING']
+#		TEST_DATA_PATH = hyper['TEST_DATA_PATH']
 
 def get_train_list(data_path):
 	'''
@@ -70,7 +71,7 @@ def get_image_batch(train_list,offset,batch_size):
 	target_list = train_list[offset:offset+batch_size]
 	input_list = []
 	label_list = []
-	#cbcr_list = []
+	cbcr_list = []
 	for pair in target_list:
 		input_img = scipy.io.loadmat(pair[1])['patch']
 		label_img = scipy.io.loadmat(pair[0])['patch']
@@ -80,7 +81,7 @@ def get_image_batch(train_list,offset,batch_size):
 	input_list.resize([BATCH_SIZE, IMG_SIZE[1], IMG_SIZE[0], 1])
 	label_list = np.array(label_list)
 	label_list.resize([BATCH_SIZE, IMG_SIZE[1], IMG_SIZE[0], 1])
-	return input_list, label_list#, np.array(cbcr_list)
+	return input_list, label_list, np.array(cbcr_list)
 
 def get_test_image(test_list, offset, batch_size):
 	'''
@@ -102,9 +103,8 @@ def get_test_image(test_list, offset, batch_size):
 	return input_list, label_list
 
 def main():
-	# Get hyper-parameters and input data
-
-	get_hyper(using_default=True)
+	# Get input data
+	#get_hyper(using_default=True)
 	train_list = get_train_list(DATA_PATH)
 	
 	if not USE_QUEUE_LOADING: # without asynchronous data loading
@@ -129,8 +129,7 @@ def main():
 	# 	model
 	shared_model = tf.make_template('shared_model', model)
 	train_output, weights 	= shared_model(train_input)
-	loss = -tf.reduce_sum(train_gt * (tf.log(train_output)-tf.log(train_gt)))	# KL-divergence
-	#loss = tf.reduce_sum(tf.nn.l2_loss(tf.subtract(train_output, train_gt)))	# MSE
+	loss = tf.reduce_sum(tf.nn.l2_loss(tf.subtract(train_output, train_gt)))	# MSE
 	for w in weights:
 		loss += tf.nn.l2_loss(w)*1e-4
 	tf.summary.scalar("loss", loss)
@@ -159,8 +158,10 @@ def main():
 			os.mkdir('logs')
 		merged = tf.summary.merge_all()
 		file_writer = tf.summary.FileWriter('logs', sess.graph)
-
-		tf.initialize_all_variables().run()
+                
+                init = tf.global_variables_initializer()
+                sess.run(init)
+		#tf.initialize_all_variables().run()
 
 		if model_path:
 			print "restore model..."
@@ -212,18 +213,18 @@ def main():
 					print "[epoch %2.4f] loss %.4f\t lr %.5f"%(epoch+(float(step)*BATCH_SIZE/len(train_list)), np.sum(l)/BATCH_SIZE, lr)
 					file_writer.add_summary(summary, step+epoch*max_step)
 					#print "[epoch %2.4f] loss %.4f\t lr %.5f\t norm %.2f"%(epoch+(float(step)*BATCH_SIZE/len(train_list)), np.sum(l)/BATCH_SIZE, lr, norm)
-				saver.save(sess, "./checkpoints/adam_epoch_%03d.ckpt" % epoch ,global_step=global_step)
+				saver.save(sess, "./checkpoints/pVDSR_adam_epoch_%03d.ckpt" % epoch ,global_step=global_step)
 		else:
 			for epoch in xrange(0, MAX_EPOCH):
 				for step in range(len(train_list)//BATCH_SIZE):
 					offset = step*BATCH_SIZE
-					input_data, gt_data = get_image_batch(train_list, offset, BATCH_SIZE) #, cbcr_data
+					input_data, gt_data,cbcr_data = get_image_batch(train_list, offset, BATCH_SIZE) #, cbcr_data
 					feed_dict = {train_input: input_data, train_gt: gt_data}
 					_,l,output,lr, g_step = sess.run([opt, loss, train_output, learning_rate, global_step], feed_dict=feed_dict)
 					print "[epoch %2.4f] loss %.4f\t lr %.5f"%(epoch+(float(step)*BATCH_SIZE/len(train_list)), np.sum(l)/BATCH_SIZE, lr)
-					del input_data, gt_data#, cbcr_data
+					del input_data, gt_data, cbcr_data
 
-				saver.save(sess, "./checkpoints/const_clip_0.01_epoch_%03d.ckpt" % epoch ,global_step=global_step)
+				saver.save(sess, "./checkpoints/pVDSR_const_clip_0.01_epoch_%03d.ckpt" % epoch ,global_step=global_step)
 
 
 
