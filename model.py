@@ -5,7 +5,7 @@ def PReLU(input_x, index):
 	alphas = tf.get_variable(
 		'alpha_%02d' % index,
 		input_x.get_shape()[-1],
-		initializer=tf.constant_initializer(1e-4),
+		initializer=tf.constant_initializer(0),
 		dtype=tf.float32
 	)
 	
@@ -25,7 +25,7 @@ def model(input_tensor):
 		tensor = PReLU(tf.nn.bias_add(tf.nn.conv2d(input_tensor, conv_00_w, strides=[1,1,1,1], padding='SAME'), conv_00_b),0)
 
 		# Middle layer
-		for i in range(16):
+		for i in range(18):
 			#conv_w = tf.get_variable("conv_%02d_w" % (i+1), [3,3,64,64], initializer=tf.contrib.layers.xavier_initializer())
 			conv_w = tf.get_variable("conv_%02d_w" % (i+1), [3,3,64,64], initializer=tf.random_normal_initializer(stddev=np.sqrt(2.0/9/64)))
 			conv_b = tf.get_variable("conv_%02d_b" % (i+1), [64], initializer=tf.constant_initializer(0))
@@ -36,8 +36,8 @@ def model(input_tensor):
 
 		# Last layer
 		#conv_w = tf.get_variable("conv_19_w", [3,3,64,1], initializer=tf.contrib.layers.xavier_initializer())
-		conv_w = tf.get_variable("conv_17_w", [3,3,64,1], initializer=tf.random_normal_initializer(stddev=np.sqrt(2.0/9/64)))
-		conv_b = tf.get_variable("conv_17_b", [1], initializer=tf.constant_initializer(0))
+		conv_w = tf.get_variable("conv_20_w", [3,3,64,1], initializer=tf.random_normal_initializer(stddev=np.sqrt(2.0/9/64)))
+		conv_b = tf.get_variable("conv_20_b", [1], initializer=tf.constant_initializer(0))
 		weights.append(conv_w)
 		weights.append(conv_b)
 		tensor = tf.nn.bias_add(tf.nn.conv2d(tensor, conv_w, strides=[1,1,1,1], padding='SAME'), conv_b)

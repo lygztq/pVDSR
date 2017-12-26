@@ -19,7 +19,7 @@ The Python package needed:
 
 Secondly, we use MATLAB(Linux version) to preprocess the training data(because when we generate the training data from image, using MATLAB is much faster than using openCV on Python). So make sure you have already installed MATLAB on your server.
 
-Finally, you can get the training data from: [data](https://jbox.sjtu.edu.cn/l/hJjgMC)
+Finally, you can get the training data from: [data](https://jbox.sjtu.edu.cn/l/fJ6wuz)
 
 - - -
 
@@ -27,7 +27,7 @@ Finally, you can get the training data from: [data](https://jbox.sjtu.edu.cn/l/h
 
 #### preprocessing data
 
-* Download the training and test data from [here](https://jbox.sjtu.edu.cn/l/hJjgMC)
+* Download the training and test data from [here](https://jbox.sjtu.edu.cn/l/fJ6wuz)
 * Unzip the data.zip, unzip 291.zip and Set14.zip inside.
 * Copy the 291 and Set14 directory to "/data" directory.
 * Run generate_train.m and generate_test.m to generate training and test data.
@@ -43,3 +43,15 @@ Run "python test.py"
 #### Plot Result
 
 Run "python plot.py"
+
+#### Use to increase resolution of images
+
+Run `python increase_resolution.py --img [your-image-path]`
+
+- - -
+
+## A Test Model
+
+If you want to use the network without training, download this [model](https://jbox.sjtu.edu.cn/l/I510t2), the result may be not very good since it just a test model.
+
+

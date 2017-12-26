@@ -10,7 +10,6 @@ from psnr import psnr
 from test import test_pVDSR
 import hyper
 
-# Get hyper-parameters
 DATA_PATH = hyper.DATA_PATH
 IMG_SIZE = hyper.IMG_SIZE
 BATCH_SIZE = hyper.BATCH_SIZE
@@ -27,24 +26,6 @@ parser.add_argument("--model_path")
 args = parser.parse_args()
 model_path = args.model_path
 
-#def get_hyper(using_default=True):
-#	'''
-#	Get the hyper-parameter
-#	'''
- #       global DATA_PATH, IMG_SIZE, BATCH_SIZE, BASE_LR, LR_RATE, LR_STEP_SIZE, MAX_EPOCH, USE_QUEUE_LOADING, TEST_DATA_PATH
-#	if using_default:
-#		return
-#	else:
-#		DATA_PATH = hyper['DATA_PATH']
-#		IMG_SIZE = hyper['IMG_SIZE']
-#		BATCH_SIZE = hyper['BATCH_SIZE']
-#		BASE_LR = hyper['BASE_LR']
-#		LR_RATE = hyper['LR_RATE']
-#		LR_STEP_SIZE = hyper['LR_STEP_SIZE']
-#		MAX_EPOCH = hyper['MAX_EPOCH']
-#		USE_QUEUE_LOADING = hyper['USE_QUEUE_LOADING']
-#		TEST_DATA_PATH = hyper['TEST_DATA_PATH']
-
 def get_train_list(data_path):
 	'''
 	Get training data list
@@ -59,9 +40,6 @@ def get_train_list(data_path):
 				back_name = "_%d.mat" % i
 				if os.path.exists(mat[:-4]+back_name): 
 					train_list.append([mat,mat[:-4]+back_name])
-			# if os.path.exists(f[:-4]+"_2.mat"): train_list.append([f, f[:-4]+"_2.mat"])
-			# if os.path.exists(f[:-4]+"_3.mat"): train_list.append([f, f[:-4]+"_3.mat"])
-			# if os.path.exists(f[:-4]+"_4.mat"): train_list.append([f, f[:-4]+"_4.mat"])
 	return train_list
 
 def get_image_batch(train_list,offset,batch_size):
@@ -93,7 +71,7 @@ def get_test_image(test_list, offset, batch_size):
 	for pair in target_list:
 		mat_dict = scipy.io.loadmat(pair[1])
 		input_img = None
-		if mat_dict.has_key("img_2"): 	input_img = mat_dict["img_2"]
+		if mat_dict.has_key("img_2"):   input_img = mat_dict["img_2"]
 		elif mat_dict.has_key("img_3"): input_img = mat_dict["img_3"]
 		elif mat_dict.has_key("img_4"): input_img = mat_dict["img_4"]
 		else: continue
@@ -103,40 +81,42 @@ def get_test_image(test_list, offset, batch_size):
 	return input_list, label_list
 
 def main():
-	# Get input data
+	# Get hyper-parameters and input data
+
 	#get_hyper(using_default=True)
 	train_list = get_train_list(DATA_PATH)
 	
 	if not USE_QUEUE_LOADING: # without asynchronous data loading
 		print "Not use queue loading"
-		train_input  	= tf.placeholder(tf.float32, shape=(BATCH_SIZE, IMG_SIZE[0], IMG_SIZE[1], 1))
-		train_gt  		= tf.placeholder(tf.float32, shape=(BATCH_SIZE, IMG_SIZE[0], IMG_SIZE[1], 1))
+		train_input     = tf.placeholder(tf.float32, shape=(BATCH_SIZE, IMG_SIZE[0], IMG_SIZE[1], 1))
+		train_gt        = tf.placeholder(tf.float32, shape=(BATCH_SIZE, IMG_SIZE[0], IMG_SIZE[1], 1))
 
 	else:
-		print "Use queue loading"	# with asynchronous data loading
+		print "Use queue loading"   # with asynchronous data loading
 		train_input_single  = tf.placeholder(tf.float32, shape=(IMG_SIZE[0], IMG_SIZE[1], 1))
-		train_gt_single  	= tf.placeholder(tf.float32, shape=(IMG_SIZE[0], IMG_SIZE[1], 1))
+		train_gt_single     = tf.placeholder(tf.float32, shape=(IMG_SIZE[0], IMG_SIZE[1], 1))
 		q = tf.FIFOQueue(10000, [tf.float32, tf.float32], [[IMG_SIZE[0], IMG_SIZE[1], 1], [IMG_SIZE[0], IMG_SIZE[1], 1]])
 		enqueue_op = q.enqueue([train_input_single, train_gt_single])
-    
-		train_input, train_gt	= q.dequeue_many(BATCH_SIZE)
+	
+		train_input, train_gt   = q.dequeue_many(BATCH_SIZE)
 
 
 
 
 	# Define model and training paramaters
 
-	# 	model
+	#   model
 	shared_model = tf.make_template('shared_model', model)
-	train_output, weights 	= shared_model(train_input)
-	loss = tf.reduce_sum(tf.nn.l2_loss(tf.subtract(train_output, train_gt)))	# MSE
+	train_output, weights   = shared_model(train_input)
+	#loss = -tf.reduce_sum(train_gt * (tf.log(train_output)-tf.log(train_gt)))  # KL-divergence
+	loss = tf.reduce_sum(tf.nn.l2_loss(tf.subtract(train_output, train_gt)))    # MSE
 	for w in weights:
 		loss += tf.nn.l2_loss(w)*1e-4
 	tf.summary.scalar("loss", loss)
 
-	# 	learning step and optimizer
-	global_step 	= tf.Variable(0, trainable=False)
-	learning_rate 	= tf.train.exponential_decay(BASE_LR, global_step*BATCH_SIZE, len(train_list)*LR_STEP_SIZE, LR_RATE, staircase=True)
+	#   learning step and optimizer
+	global_step     = tf.Variable(0, trainable=False)
+	learning_rate   = tf.train.exponential_decay(BASE_LR, global_step*BATCH_SIZE, len(train_list)*LR_STEP_SIZE, LR_RATE, staircase=True)
 	tf.summary.scalar("learning rate", learning_rate)
 
 	optimizer = tf.train.AdamOptimizer(learning_rate)#tf.train.MomentumOptimizer(learning_rate, 0.9)
@@ -158,10 +138,9 @@ def main():
 			os.mkdir('logs')
 		merged = tf.summary.merge_all()
 		file_writer = tf.summary.FileWriter('logs', sess.graph)
-                
-                init = tf.global_variables_initializer()
-                sess.run(init)
-		#tf.initialize_all_variables().run()
+				
+		init = tf.global_variables_initializer()
+		sess.run(init)
 
 		if model_path:
 			print "restore model..."
@@ -175,8 +154,8 @@ def main():
 			try:
 				while not coord.should_stop():
 					i = count % length;
-					input_img	= scipy.io.loadmat(file_list[i][1])['patch'].reshape([IMG_SIZE[0], IMG_SIZE[1], 1])
-					label_img		= scipy.io.loadmat(file_list[i][0])['patch'].reshape([IMG_SIZE[0], IMG_SIZE[1], 1])
+					input_img   = scipy.io.loadmat(file_list[i][1])['patch'].reshape([IMG_SIZE[0], IMG_SIZE[1], 1])
+					label_img       = scipy.io.loadmat(file_list[i][0])['patch'].reshape([IMG_SIZE[0], IMG_SIZE[1], 1])
 					sess.run(enqueue_op, feed_dict={train_input_single:input_img, train_gt_single:label_img})
 					count+=1
 			except Exception as e:
@@ -199,6 +178,7 @@ def main():
 			# create threads
 			num_thread=20
 			coord = tf.train.Coordinator()
+
 			for i in range(num_thread):
 				length = len(train_list)/num_thread
 				t = threading.Thread(target=load_and_enqueue, args=(coord, train_list[i*length:(i+1)*length],enqueue_op, train_input_single, train_gt_single,  i, num_thread))
