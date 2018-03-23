@@ -20,10 +20,11 @@ def double2im(img):
 def YCbCr2rgb(ycbcr_img):
 	img = ycbcr_img.astype(np.int)
 	rgb = np.zeros([img.shape[0],img.shape[1],img.shape[2]],dtype=np.float32)
-	rgb[:,:,0] = ((int(img[:,:,0]) - 16)*298.082 + (int(img[:,:,2])-128)*408.583)/256
-	rgb[:,:,1] = ((int(img[:,:,0]) - 16)*298.082 - (int(img[:,:,1])-128)*100.291 - (int(img[:,:,2])-128)*208.12)/256
-	rgb[:,:,2] = ((int(img[:,:,0]) - 16)*298.082 + (int(img[:,:,1])-128)*516.411)/256
+	rgb[:,:,0] = ((img[:,:,0] - 16)*298.082 + (img[:,:,2]-128)*408.583)/256
+	rgb[:,:,1] = ((img[:,:,0] - 16)*298.082 - (img[:,:,1]-128)*100.291 - (img[:,:,2]-128)*208.12)/256
+	rgb[:,:,2] = ((img[:,:,0] - 16)*298.082 + (img[:,:,1]-128)*516.411)/256
 	rgb = rgb.astype(np.int)
+	return rgb
 if __name__ == '__main__':
 	ckpt_dir = './checkpoints'
 	img = misc.imread(img_path, mode='YCbCr')
